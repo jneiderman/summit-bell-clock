@@ -26,15 +26,16 @@
     height: 100%;
     width: 100%;
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto auto;
+    justify-content: start;
     align-items: center;
-    gap: 3vw;
-    padding: 4vh 4vw;
+    gap: 2.5vw;
+    padding: 3vh 2vw;
   }
   .eyebrow {
     font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
     font-weight: 500;
-    font-size: min(8vh, 3vw);
+    font-size: min(13vh, 4vw);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--accent);
@@ -43,39 +44,39 @@
   .period {
     font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
     font-weight: 700;
-    font-size: min(32vh, 12vw);
+    font-size: min(58vh, 13vw);
     line-height: 0.95;
-    margin-top: 1.5vh;
+    margin-top: 1vh;
     white-space: nowrap;
     letter-spacing: -0.01em;
   }
-  .period.small { font-size: min(22vh, 8vw); line-height: 1.05; }
+  .period.small { font-size: min(34vh, 9vw); line-height: 1.05; }
   .period .team { color: var(--muted); font-weight: 500; font-size: 0.55em; margin-right: 0.25em; }
   .side {
-    text-align: right;
+    text-align: left;
     font-variant-numeric: tabular-nums;
     border-left: 2px solid var(--line);
-    padding-left: 3vw;
+    padding-left: 2.5vw;
     overflow: hidden;
   }
   .range {
     font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
     font-weight: 500;
-    font-size: min(10vh, 3.7vw);
+    font-size: min(22vh, 5.6vw);
     line-height: 1;
     white-space: nowrap;
   }
   .left {
-    font-size: min(8vh, 3vw);
+    font-size: min(16vh, 4.2vw);
     font-weight: 600;
     line-height: 1.2;
-    margin-top: 2vh;
+    margin-top: 1.5vh;
     white-space: nowrap;
   }
   .left b { color: var(--accent); }
   .next {
     color: var(--muted);
-    font-size: min(7vh, 2.5vw);
+    font-size: min(13vh, 3vw);
     line-height: 1.2;
     margin-top: 1vh;
     white-space: nowrap;
@@ -162,20 +163,20 @@
       el("range").textContent = clock(cur.s) + " – " + clock(cur.e);
       const rem = cur.e - min;
       el("left").innerHTML = `Ends in <b>${mins(rem)}</b>`;
-      el("next").textContent = next ? "Next: " + next.name + " at " + clock(next.s) : "Last block of the day";
+      el("next").textContent = next ? "Next: " + next.name + " " + clock(next.s) : "Last block of the day";
       return;
     }
 
     if (!next) {
-      el("eyebrow").textContent = "Dismissal";
-      periodEl.textContent = "School Day Over";
+      el("eyebrow").textContent = "School day over";
+      periodEl.textContent = "Dismissal";
       el("range").textContent = ""; el("left").textContent = ""; el("next").textContent = "See you tomorrow";
       return;
     }
 
     const before = min < SCHEDULE[0].s;
     el("eyebrow").textContent = before ? "Before School" : "Passing";
-    periodEl.textContent = before ? "Good Morning" : "Passing Time";
+    periodEl.textContent = before ? "Good Morning" : "Passing";
     el("range").textContent = "";
     el("left").innerHTML = `${next.name} in <b>${mins(next.s - min)}</b>`;
     el("next").textContent = "Starts at " + clock(next.s);
