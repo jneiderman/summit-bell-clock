@@ -1,0 +1,4 @@
+{
+  "_comment": "Ad hoc bell schedule overrides. Key = date (YYYY-MM-DD), value = am | pm | regular. Past dates are ignored, so you can leave them or delete them.",
+  "2026-01-01": "regular"
+}
