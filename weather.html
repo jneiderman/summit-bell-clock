@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;600&display=swap">
 <style>
   :root {
-    --bg: #101820;
+    --bg: #000000;
     --ink: #f4f6f8;
     --muted: #9fb0bf;
     --accent: #f5b400;
@@ -25,17 +25,18 @@
     height: 100%;
     width: 100%;
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto auto;
+    justify-content: center;
     align-items: center;
-    gap: 3vw;
+    gap: 4vw;
     padding: 4vh 4vw;
   }
   .now { display: flex; align-items: center; gap: 1.5vw; }
-  .now svg { width: min(36vh, 13vw); height: min(36vh, 13vw); flex: none; }
+  .now svg { width: min(60vh, 18vw); height: min(60vh, 18vw); flex: none; }
   .temp {
     font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
     font-weight: 700;
-    font-size: min(34vh, 12vw);
+    font-size: min(62vh, 20vw);
     line-height: 0.9;
     letter-spacing: -0.01em;
     white-space: nowrap;
@@ -46,7 +47,7 @@
   .eyebrow {
     font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
     font-weight: 500;
-    font-size: min(8vh, 3vw);
+    font-size: min(13vh, 4.5vw);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--accent);
@@ -56,7 +57,7 @@
   .cond {
     font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
     font-weight: 700;
-    font-size: min(13vh, 4.6vw);
+    font-size: min(24vh, 8vw);
     line-height: 1.05;
     margin-top: 1vh;
     white-space: nowrap;
@@ -65,38 +66,13 @@
   }
   .hilo {
     color: var(--muted);
-    font-size: min(8vh, 3vw);
+    font-size: min(13vh, 4.5vw);
     font-weight: 600;
     margin-top: 1vh;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
   .hilo b { color: var(--ink); font-weight: 600; }
-  .days {
-    display: flex;
-    gap: 2.2vw;
-    border-left: 2px solid var(--line);
-    padding-left: 3vw;
-  }
-  .day { text-align: center; }
-  .day .n {
-    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
-    font-weight: 500;
-    font-size: min(8vh, 3vw);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    line-height: 1;
-  }
-  .day svg { width: min(20vh, 7.5vw); height: min(20vh, 7.5vw); margin: 1.2vh 0; display: block; margin-left: auto; margin-right: auto; }
-  .day .t {
-    font-size: min(7.5vh, 2.8vw);
-    font-weight: 600;
-    line-height: 1;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-  .day .t span { color: var(--muted); }
   .err { color: var(--muted); font-size: min(8vh, 3vw); }
 </style>
 </head>
@@ -112,7 +88,6 @@
     <div class="cond" id="cond">Loading weather</div>
     <div class="hilo" id="hilo"></div>
   </div>
-  <div class="days" id="days"></div>
 </div>
 
 <script>
@@ -121,7 +96,7 @@
   const URL = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
     + `&current=temperature_2m,weather_code,is_day`
     + `&daily=weather_code,temperature_2m_max,temperature_2m_min`
-    + `&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=4`;
+    + `&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=1`;
 
   // WMO weather codes -> label + icon key
   function describe(code) {
@@ -144,15 +119,13 @@
   const ICONS = {
     sun: `<svg ${S} stroke="#f5b400"><circle cx="32" cy="32" r="11" fill="#f5b400"/><path d="M32 8v6M32 50v6M8 32h6M50 32h6M15 15l4 4M45 45l4 4M15 49l4-4M45 19l4-4"/></svg>`,
     moon: `<svg ${S} stroke="#f4f6f8"><path d="M40 10a20 20 0 1 0 14 30A16 16 0 0 1 40 10z" fill="#f4f6f8"/></svg>`,
-    suncloud: `<svg ${S}><circle cx="42" cy="22" r="9" fill="#f5b400" stroke="#f5b400"/><path d="M42 6v4M56 22h-4M52 12l-3 3M52 32l-3-3" stroke="#f5b400"/><path d="M14 50h24a9 9 0 0 0 1-18 12 12 0 0 0-24-2 8 8 0 0 0-1 20z" fill="#101820" stroke="#f4f6f8"/></svg>`,
+    suncloud: `<svg ${S}><circle cx="42" cy="22" r="9" fill="#f5b400" stroke="#f5b400"/><path d="M42 6v4M56 22h-4M52 12l-3 3M52 32l-3-3" stroke="#f5b400"/><path d="M14 50h24a9 9 0 0 0 1-18 12 12 0 0 0-24-2 8 8 0 0 0-1 20z" fill="#000000" stroke="#f4f6f8"/></svg>`,
     cloud: `<svg ${S} stroke="#f4f6f8"><path d="${cloudPath}"/></svg>`,
     fog: `<svg ${S} stroke="#f4f6f8"><path d="M20 38h26a10 10 0 0 0 1-20 14 14 0 0 0-27-3 9 9 0 0 0 0 23z"/><path d="M14 48h36M20 56h28" stroke="#9fb0bf"/></svg>`,
     rain: `<svg ${S} stroke="#f4f6f8"><path d="M20 40h26a10 10 0 0 0 1-20 14 14 0 0 0-27-3 9 9 0 0 0 0 23z"/><path d="M24 48l-3 8M34 48l-3 8M44 48l-3 8" stroke="#5aa9ff"/></svg>`,
     snow: `<svg ${S} stroke="#f4f6f8"><path d="M20 40h26a10 10 0 0 0 1-20 14 14 0 0 0-27-3 9 9 0 0 0 0 23z"/><path d="M24 50v6M21 53h6M34 50v6M31 53h6M44 50v6M41 53h6" stroke="#bfe3ff"/></svg>`,
     storm: `<svg ${S} stroke="#f4f6f8"><path d="M20 38h26a10 10 0 0 0 1-20 14 14 0 0 0-27-3 9 9 0 0 0 0 23z"/><path d="M34 40l-6 10h8l-6 10" stroke="#f5b400"/></svg>`,
   };
-
-  const DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   async function load() {
     try {
@@ -167,14 +140,6 @@
       document.getElementById("hilo").innerHTML =
         `H <b>${Math.round(d.daily.temperature_2m_max[0])}°</b> &nbsp; L <b>${Math.round(d.daily.temperature_2m_min[0])}°</b>`;
 
-      const days = [];
-      for (let i = 1; i < d.daily.time.length; i++) {
-        const dt = new Date(d.daily.time[i] + "T12:00:00");
-        const [, k] = describe(d.daily.weather_code[i]);
-        days.push(`<div class="day"><div class="n">${DAY[dt.getDay()]}</div>${ICONS[k]}` +
-          `<div class="t">${Math.round(d.daily.temperature_2m_max[i])}° <span>${Math.round(d.daily.temperature_2m_min[i])}°</span></div></div>`);
-      }
-      document.getElementById("days").innerHTML = days.join("");
     } catch (e) {
       document.getElementById("cond").textContent = "Weather unavailable";
       document.getElementById("cond").className = "cond err";
@@ -185,4 +150,4 @@
   setInterval(load, 10 * 60 * 1000);
 </script>
 </body>
-</html>
+</html
