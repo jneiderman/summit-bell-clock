@@ -98,32 +98,85 @@
 </div>
 
 <script>
-  // Summit School bell schedule. Times are minutes after midnight, America/New_York.
+  // Summit School bell schedules (2026-27). Times are minutes after midnight, America/New_York.
+  // tag  = shown in the small yellow eyebrow above the block name
+  // short = used in the "Next:" line when the name needs a qualifier
   const T = (h, m) => h * 60 + m;
-  const SCHEDULE = [
-    { s: T(8,35),  e: T(8,47),  name: "Homeroom" },
-    { s: T(8,50),  e: T(9,37),  name: "Period 1" },
-    { s: T(9,40),  e: T(10,27), name: "Period 2" },
-    { s: T(10,30), e: T(11,17), name: "Period 3" },
-    { s: T(11,20), e: T(12,7),  name: "Period 4" },
-    { s: T(12,10), e: T(12,12), name: "Homeroom" },
-    { s: T(12,12), e: T(12,42), name: "Lunch / Recess", split: [["9/10", "Lunch"], ["11/12", "Recess"]] },
-    { s: T(12,42), e: T(13,12), name: "Recess / Lunch", split: [["9/10", "Recess"], ["11/12", "Lunch"]] },
-    { s: T(13,12), e: T(13,14), name: "Homeroom" },
-    { s: T(13,17), e: T(14,4),  name: "Period 6" },
-    { s: T(14,7),  e: T(14,54), name: "Period 7" },
-    { s: T(14,57), e: T(15,0),  name: "Homeroom" },
-  ];
+  const LR = [["9/10", "Lunch"], ["11/12", "Recess"]];
+  const RL = [["9/10", "Recess"], ["11/12", "Lunch"]];
+
+  const SCHEDULES = {
+    regular: { label: "Regular Day", blocks: [
+      { s: T(8,35),  e: T(8,47),  name: "Homeroom" },
+      { s: T(8,50),  e: T(9,37),  name: "Period 1" },
+      { s: T(9,40),  e: T(10,27), name: "Period 2" },
+      { s: T(10,30), e: T(11,17), name: "Period 3" },
+      { s: T(11,20), e: T(12,7),  name: "Period 4" },
+      { s: T(12,10), e: T(12,12), name: "Homeroom", tag: "Pre-Lunch" },
+      { s: T(12,12), e: T(12,42), name: "Lunch / Recess", split: LR },
+      { s: T(12,42), e: T(13,12), name: "Recess / Lunch", split: RL },
+      { s: T(13,12), e: T(13,14), name: "Homeroom", tag: "Post-Lunch" },
+      { s: T(13,17), e: T(14,4),  name: "Period 6" },
+      { s: T(14,7),  e: T(14,54), name: "Period 7" },
+      { s: T(14,57), e: T(15,0),  name: "Homeroom", tag: "End of Day" },
+    ]},
+    am: { label: "AM Extended Homeroom", blocks: [
+      { s: T(8,35),  e: T(9,30),  name: "Homeroom", tag: "Extended Morning", short: "Ext. Homeroom" },
+      { s: T(9,32),  e: T(10,13), name: "Period 1" },
+      { s: T(10,15), e: T(10,56), name: "Period 2" },
+      { s: T(10,58), e: T(11,39), name: "Period 3" },
+      { s: T(11,41), e: T(12,22), name: "Period 4" },
+      { s: T(12,25), e: T(12,27), name: "Homeroom", tag: "Pre-Lunch" },
+      { s: T(12,27), e: T(12,57), name: "Lunch / Recess", split: LR },
+      { s: T(12,57), e: T(13,27), name: "Recess / Lunch", split: RL },
+      { s: T(13,27), e: T(13,29), name: "Homeroom", tag: "Post-Lunch" },
+      { s: T(13,31), e: T(14,12), name: "Period 6" },
+      { s: T(14,14), e: T(14,55), name: "Period 7" },
+      { s: T(14,57), e: T(15,0),  name: "Homeroom", tag: "End of Day" },
+    ]},
+    pm: { label: "PM Extended Homeroom", blocks: [
+      { s: T(8,35),  e: T(8,43),  name: "Homeroom", tag: "Morning" },
+      { s: T(8,45),  e: T(9,26),  name: "Period 1" },
+      { s: T(9,28),  e: T(10,9),  name: "Period 2" },
+      { s: T(10,11), e: T(10,52), name: "Period 3" },
+      { s: T(10,54), e: T(11,35), name: "Period 4" },
+      { s: T(11,38), e: T(11,40), name: "Homeroom", tag: "Pre-Lunch" },
+      { s: T(11,40), e: T(12,10), name: "Lunch / Recess", split: LR },
+      { s: T(12,10), e: T(12,40), name: "Recess / Lunch", split: RL },
+      { s: T(12,40), e: T(12,42), name: "Homeroom", tag: "Post-Lunch" },
+      { s: T(12,44), e: T(13,25), name: "Period 6" },
+      { s: T(13,27), e: T(14,8),  name: "Period 7" },
+      { s: T(14,10), e: T(15,0),  name: "Homeroom", tag: "Student Support Meeting", short: "Ext. Homeroom" },
+    ]},
+  };
+
+  // Which schedule runs today:
+  //   1. ?schedule=am|pm|regular in the URL wins (handy for testing or a second ScreenCloud link)
+  //   2. otherwise overrides.json in this repo: { "2026-09-24": "am", "2026-10-02": "pm" }
+  //   3. otherwise regular
+  const urlPick = new URLSearchParams(location.search).get("schedule");
+  let overrides = {};
+  async function loadOverrides() {
+    try {
+      const r = await fetch("overrides.json", { cache: "no-store" });
+      if (r.ok) overrides = await r.json();
+    } catch (e) {}
+  }
+  function todaysSchedule(dateKey) {
+    const key = (urlPick && SCHEDULES[urlPick]) ? urlPick : (overrides[dateKey] || "regular");
+    return SCHEDULES[SCHEDULES[key] ? key : "regular"];
+  }
 
   const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York", hour: "numeric", minute: "2-digit",
-    weekday: "short", hour12: false
+    weekday: "short", hour12: false, year: "numeric", month: "2-digit", day: "2-digit"
   });
 
   function nyNow() {
     const parts = Object.fromEntries(fmt.formatToParts(new Date()).map(p => [p.type, p.value]));
     const h = parseInt(parts.hour, 10) % 24;
-    return { min: h * 60 + parseInt(parts.minute, 10), weekday: parts.weekday };
+    return { min: h * 60 + parseInt(parts.minute, 10), weekday: parts.weekday,
+             dateKey: `${parts.year}-${parts.month}-${parts.day}` };
   }
 
   function clock(m) {
@@ -136,7 +189,8 @@
   function mins(n) { return n + (n === 1 ? " min" : " min"); }
 
   function render() {
-    const { min, weekday } = nyNow();
+    const { min, weekday, dateKey } = nyNow();
+    const SCHEDULE = todaysSchedule(dateKey).blocks;
     const el = id => document.getElementById(id);
     const periodEl = el("period");
     periodEl.classList.remove("small");
@@ -152,7 +206,7 @@
     const next = SCHEDULE.find(p => p.s > min);
 
     if (cur) {
-      el("eyebrow").textContent = "Now";
+      el("eyebrow").textContent = cur.tag || "Now";
       if (cur.split) {
         periodEl.classList.add("small");
         periodEl.innerHTML = cur.split.map(([team, what]) =>
@@ -163,7 +217,7 @@
       el("range").textContent = clock(cur.s) + " – " + clock(cur.e);
       const rem = cur.e - min;
       el("left").innerHTML = `Ends in <b>${mins(rem)}</b>`;
-      el("next").textContent = next ? "Next: " + next.name + " " + clock(next.s) : "Last block of the day";
+      el("next").textContent = next ? "Next: " + (next.short || next.name) + " " + clock(next.s) : "Last block of the day";
       return;
     }
 
@@ -176,14 +230,16 @@
 
     const before = min < SCHEDULE[0].s;
     el("eyebrow").textContent = before ? "Before School" : "Passing";
-    periodEl.textContent = before ? "Good Morning" : "Passing";
+    periodEl.textContent = before ? "Welcome" : "Passing";
     el("range").textContent = "";
-    el("left").innerHTML = `${next.name} in <b>${mins(next.s - min)}</b>`;
+    el("left").innerHTML = `${next.short || next.name} in <b>${mins(next.s - min)}</b>`;
     el("next").textContent = "Starts at " + clock(next.s);
   }
 
   render();
+  loadOverrides().then(render);
   setInterval(render, 5000);
+  setInterval(loadOverrides, 5 * 60 * 1000);
 </script>
 </body>
 </html>
