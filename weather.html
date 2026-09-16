@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Summit Weather</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #101820;
+    --ink: #f4f6f8;
+    --muted: #9fb0bf;
+    --accent: #f5b400;
+    --line: #2a3945;
+  }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Barlow", "Helvetica Neue", Arial, sans-serif;
+    overflow: hidden;
+  }
+  #app {
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 3vw;
+    padding: 4vh 4vw;
+  }
+  .now { display: flex; align-items: center; gap: 2vw; }
+  .now svg { width: min(46vh, 18vw); height: min(46vh, 18vw); flex: none; }
+  .temp {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: min(40vh, 15vw);
+    line-height: 0.9;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .temp sup { font-size: 0.45em; font-weight: 500; vertical-align: top; line-height: 1; margin-left: 0.05em; }
+  .meta { min-width: 0; }
+  .eyebrow {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-weight: 500;
+    font-size: min(8vh, 3vw);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .cond {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: min(15vh, 5.6vw);
+    line-height: 1.05;
+    margin-top: 1vh;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hilo {
+    color: var(--muted);
+    font-size: min(8vh, 3vw);
+    font-weight: 600;
+    margin-top: 1vh;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .hilo b { color: var(--ink); font-weight: 600; }
+  .days {
+    display: flex;
+    gap: 2.2vw;
+    border-left: 2px solid var(--line);
+    padding-left: 3vw;
+  }
+  .day { text-align: center; }
+  .day .n {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-weight: 500;
+    font-size: min(8vh, 3vw);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    line-height: 1;
+  }
+  .day svg { width: min(20vh, 7.5vw); height: min(20vh, 7.5vw); margin: 1.2vh 0; display: block; margin-left: auto; margin-right: auto; }
+  .day .t {
+    font-size: min(7.5vh, 2.8vw);
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .day .t span { color: var(--muted); }
+  .err { color: var(--muted); font-size: min(8vh, 3vw); }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="now">
+    <span id="nowIcon"></span>
+    <div class="temp" id="temp">--<sup>°</sup></div>
+  </div>
+  <div class="meta">
+    <div class="eyebrow">Upper Nyack</div>
+    <div class="cond" id="cond">Loading weather</div>
+    <div class="hilo" id="hilo"></div>
+  </div>
+  <div class="days" id="days"></div>
+</div>
+
+<script>
+  // Upper Nyack, NY. Open-Meteo needs no API key.
+  const LAT = 41.1029, LON = -73.9204;
+  const URL = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
+    + `&current=temperature_2m,weather_code,is_day`
+    + `&daily=weather_code,temperature_2m_max,temperature_2m_min`
+    + `&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=4`;
+
+  // WMO weather codes -> label + icon key
+  function describe(code) {
+    if (code === 0) return ["Clear", "sun"];
+    if (code === 1) return ["Mostly Clear", "sun"];
+    if (code === 2) return ["Partly Cloudy", "suncloud"];
+    if (code === 3) return ["Overcast", "cloud"];
+    if (code === 45 || code === 48) return ["Foggy", "fog"];
+    if (code >= 51 && code <= 57) return ["Drizzle", "rain"];
+    if (code >= 61 && code <= 67) return ["Rain", "rain"];
+    if (code >= 71 && code <= 77) return ["Snow", "snow"];
+    if (code >= 80 && code <= 82) return ["Showers", "rain"];
+    if (code === 85 || code === 86) return ["Snow Showers", "snow"];
+    if (code >= 95) return ["Thunderstorms", "storm"];
+    return ["Cloudy", "cloud"];
+  }
+
+  const S = 'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"';
+  const cloudPath = 'M20 46h26a10 10 0 0 0 1-20 14 14 0 0 0-27-3 9 9 0 0 0 0 23z';
+  const ICONS = {
+    sun: `<svg ${S} stroke="#f5b400"><circle cx="32" cy="32" r="11" fill="#f5b400"/><path d="M32 8v6M32 50v6M8 32h6M50 32h6M15 15l4 4M45 45l4 4M15 49l4-4M45 19l4-4"/></svg>`,
+    moon: `<svg ${S} stroke="#f4f6f8"><path d="M40 10a20 20 0 1 0 14 30A16 16 0 0 1 40 10z" fill="#f4f6f8"/></svg>`,
+    suncloud: `<svg ${S}><circle cx="42" cy="22" r="9" fill="#f5b400" stroke="#f5b400"/><path d="M42 6v4M56 22h-4M52 12l-3 3M52 32l-3-3" stroke="#f5b400"/><path d="M14 50h24a9 9 0 0 0 1-18 12 12 0 0 0-24-2 8 8 0 0 0-1 20z" fill="#101820" stroke="#f4f6f8"/></svg>`,
+    cloud: `<svg ${S} stroke="#f4f6f8"><path d="${cloudPath}"/></svg>`,
+    fog: `<svg ${S} stroke="#f4f6f8"><path d="M20 38h26a10 10 0 0 0 1-20 14 14 0 0 0-27-3 9 9 0 0 0 0 23z"/><path d="M14 48h36M20 56h28" stroke="#9fb0bf"/></svg>`,
+    rain: `<svg ${S} stroke="#f4f6f8"><path d="M20 40h26a10 10 0 0 0 1-20 14 14 0 0 0-27-3 9 9 0 0 0 0 23z"/><path d="M24 48l-3 8M34 48l-3 8M44 48l-3 8" stroke="#5aa9ff"/></svg>`,
+    snow: `<svg ${S} stroke="#f4f6f8"><path d="M20 40h26a10 10 0 0 0 1-20 14 14 0 0 0-27-3 9 9 0 0 0 0 23z"/><path d="M24 50v6M21 53h6M34 50v6M31 53h6M44 50v6M41 53h6" stroke="#bfe3ff"/></svg>`,
+    storm: `<svg ${S} stroke="#f4f6f8"><path d="M20 38h26a10 10 0 0 0 1-20 14 14 0 0 0-27-3 9 9 0 0 0 0 23z"/><path d="M34 40l-6 10h8l-6 10" stroke="#f5b400"/></svg>`,
+  };
+
+  const DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  async function load() {
+    try {
+      const r = await fetch(URL, { cache: "no-store" });
+      const d = await r.json();
+      const c = d.current;
+      const [label, key] = describe(c.weather_code);
+      const iconKey = (key === "sun" && !c.is_day) ? "moon" : key;
+      document.getElementById("nowIcon").innerHTML = ICONS[iconKey];
+      document.getElementById("temp").innerHTML = Math.round(c.temperature_2m) + "<sup>°</sup>";
+      document.getElementById("cond").textContent = label;
+      document.getElementById("hilo").innerHTML =
+        `H <b>${Math.round(d.daily.temperature_2m_max[0])}°</b> &nbsp; L <b>${Math.round(d.daily.temperature_2m_min[0])}°</b>`;
+
+      const days = [];
+      for (let i = 1; i < d.daily.time.length; i++) {
+        const dt = new Date(d.daily.time[i] + "T12:00:00");
+        const [, k] = describe(d.daily.weather_code[i]);
+        days.push(`<div class="day"><div class="n">${DAY[dt.getDay()]}</div>${ICONS[k]}` +
+          `<div class="t">${Math.round(d.daily.temperature_2m_max[i])}° <span>${Math.round(d.daily.temperature_2m_min[i])}°</span></div></div>`);
+      }
+      document.getElementById("days").innerHTML = days.join("");
+    } catch (e) {
+      document.getElementById("cond").textContent = "Weather unavailable";
+      document.getElementById("cond").className = "cond err";
+    }
+  }
+
+  load();
+  setInterval(load, 10 * 60 * 1000);
+</script>
+</body>
+</html>
