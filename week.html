@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Summit Week Letter</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #000000;
+    --ink: #f4f6f8;
+    --muted: #9fb0bf;
+    --accent: #f5b400;
+    --line: #2a3945;
+  }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Barlow", "Helvetica Neue", Arial, sans-serif;
+    overflow: hidden;
+  }
+  #app {
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    align-items: center;
+    gap: 2.5vw;
+    padding: 3vh 2vw;
+  }
+  .eyebrow {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-weight: 500;
+    font-size: min(13vh, 4vw);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .week {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: min(60vh, 14vw);
+    line-height: 0.95;
+    margin-top: 1vh;
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+  }
+  .week b { color: var(--accent); }
+  .side {
+    border-left: 2px solid var(--line);
+    padding-left: 2.5vw;
+    overflow: hidden;
+    font-variant-numeric: tabular-nums;
+  }
+  .dates {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-weight: 500;
+    font-size: min(22vh, 5.6vw);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .next {
+    color: var(--muted);
+    font-size: min(14vh, 3.3vw);
+    line-height: 1.2;
+    margin-top: 1.5vh;
+    white-space: nowrap;
+  }
+  .next b { color: var(--ink); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div>
+    <div class="eyebrow" id="eyebrow">This Week</div>
+    <div class="week" id="week"><b>A</b> Week</div>
+  </div>
+  <div class="side">
+    <div class="dates" id="dates"></div>
+    <div class="next" id="next"></div>
+  </div>
+</div>
+
+<script>
+  // A/B week rotation for Summit School.
+  // Rules:
+  //   - Weeks alternate A, B, A, B by calendar week (Mon-Sun), starting from the anchor week.
+  //   - A week with a holiday in it still counts (Labor Day week was a B week).
+  //   - A FULL week off (winter break, February break, ...) does NOT count: list its Monday in
+  //     week-config.json "weeksOff" and the rotation resumes where it left off afterwards.
+  // Edit week-config.json in this repo, not this file.
+
+  const DEFAULT_CONFIG = { anchorMonday: "2026-08-31", anchorLetter: "A", weeksOff: [] };
+  let config = DEFAULT_CONFIG;
+
+  const nyFmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", weekday: "short"
+  });
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const DOW = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+  // Today's date in New York, as a UTC-midnight Date (so date math is DST-proof).
+  function nyToday() {
+    const p = Object.fromEntries(nyFmt.formatToParts(new Date()).map(x => [x.type, x.value]));
+    return { date: new Date(Date.UTC(+p.year, +p.month - 1, +p.day)), dow: DOW[p.weekday] };
+  }
+  const iso = d => d.toISOString().slice(0, 10);
+  const addDays = (d, n) => new Date(d.getTime() + n * 86400000);
+  const fmt = d => `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
+  function mondayOf(d, dow) { return addDays(d, -((dow + 6) % 7)); }
+
+  // Letter for the week starting on a given Monday (UTC-midnight Date).
+  function letterFor(monday) {
+    const off = new Set(config.weeksOff || []);
+    const anchor = new Date(config.anchorMonday + "T00:00:00Z");
+    let letter = config.anchorLetter === "B" ? "B" : "A";
+    if (monday < anchor) return letter;
+    for (let m = anchor; m < monday; m = addDays(m, 7)) {
+      if (!off.has(iso(m))) letter = letter === "A" ? "B" : "A";
+    }
+    return off.has(iso(monday)) ? null : letter;
+  }
+
+  function render() {
+    const { date, dow } = nyToday();
+    const thisMon = mondayOf(date, dow);
+    // On Sat/Sun show the upcoming week instead.
+    const showMon = dow === 0 || dow === 6 ? addDays(thisMon, 7) : thisMon;
+    const eyebrow = showMon > thisMon ? "Next Week" : "This Week";
+
+    const letter = letterFor(showMon);
+    let nextMon = addDays(showMon, 7);
+    while (letterFor(nextMon) === null) nextMon = addDays(nextMon, 7);
+    const nextLetter = letterFor(nextMon);
+
+    document.getElementById("eyebrow").textContent = eyebrow;
+    document.getElementById("dates").textContent = `${fmt(showMon)} – ${fmt(addDays(showMon, 4))}`;
+    if (letter === null) {
+      document.getElementById("week").innerHTML = "No School";
+      document.getElementById("next").innerHTML = `<b>${nextLetter} Week</b> resumes ${fmt(nextMon)}`;
+    } else {
+      document.getElementById("week").innerHTML = `<b>${letter}</b> Week`;
+      document.getElementById("next").innerHTML = `Next: <b>${nextLetter} Week</b> starts ${fmt(nextMon)}`;
+    }
+  }
+
+  async function loadConfig() {
+    try {
+      const r = await fetch("week-config.json", { cache: "no-store" });
+      if (r.ok) config = Object.assign({}, DEFAULT_CONFIG, await r.json());
+    } catch (e) {}
+    render();
+  }
+
+  render();
+  loadConfig();
+  setInterval(loadConfig, 10 * 60 * 1000);
+  setInterval(render, 60 * 1000);
+</script>
+</body>
+</html>
