@@ -1,7 +1,10 @@
 {
-  "_comment": "A/B week rotation. anchorMonday = a Monday whose week is anchorLetter. weeksOff = Mondays of FULL weeks off (no school all week); those weeks do not advance the rotation. Weeks with a single holiday still count and should NOT be listed.",
+  "_comment": "A/B week rotation. anchorMonday = a Monday whose week is anchorLetter. weeksOff = Mondays of FULL weeks off (no school Mon-Fri); those weeks do not advance the rotation. Weeks with only some days off still count and should NOT be listed. Update weeksOff each summer from the new school calendar.",
   "anchorMonday": "2026-08-31",
   "anchorLetter": "A",
   "weeksOff": [
+    "2026-12-28",
+    "2027-02-15",
+    "2027-03-22"
   ]
 }
