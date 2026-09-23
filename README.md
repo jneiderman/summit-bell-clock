@@ -52,14 +52,36 @@ Weekends show "No School". Before 8:35 shows "Welcome"; between blocks "Passing"
 
 ---
 
+## A/B week box (automatic)
+
+The Week zone shows **A Week / B Week** from `week.html`, computed from `week-config.json`. Nothing to schedule month to month.
+
+Rules it follows:
+- Alternates every calendar week from the anchor (`2026-08-31` = A).
+- A week with some days off still counts (Labor Day week was B).
+- A **full** week off (Mon-Fri) does not count; the rotation resumes where it left off.
+- Sat/Sun it shows the coming week. During a week off it shows "No School" and when the next letter resumes.
+
+**Once each summer** (takes 2 minutes):
+
+1. Open https://github.com/jneiderman/summit-bell-clock/edit/main/week-config.json
+2. Set `anchorMonday` to the first Monday of the new school year and `anchorLetter` to its letter.
+3. Replace `weeksOff` with the Mondays of every full week off on the new school calendar (winter recess, February recess, spring break).
+4. Commit. Live in about 2 minutes.
+
+2026-27 weeks off already entered: `2026-12-28`, `2027-02-15`, `2027-03-22`.
+
+---
+
 ## Where things live
 
 | Thing | Location |
 |---|---|
 | Bell clock page | `index.html` → https://jneiderman.github.io/summit-bell-clock/ |
 | Weather page | `weather.html` → https://jneiderman.github.io/summit-bell-clock/weather.html (Open-Meteo, no API key, Upper Nyack coordinates) |
-| Day overrides | `overrides.json` |
+| Day overrides (extended homeroom) | `overrides.json` |
+| A/B week page + config | `week.html`, `week-config.json` → https://jneiderman.github.io/summit-bell-clock/week.html |
 | ScreenCloud layout | Custom layout "Main + 4 Zone Footer": main 1920×950, footer 130 px tall, four 480 px zones — Time / Period / Weather / Week |
-| ScreenCloud links | "Summit Bell Clock" (Period zone) and "Summit Weather" (Weather zone), under Links |
+| ScreenCloud links | "Summit Bell Clock" (Period), "Summit Weather" (Weather), "Summit Week Letter" (Week), under Links |
 
 The Studio preview caches web links for a few minutes; the players refresh on their own. If a zone looks stale in Studio, that's the cache, not the page.
